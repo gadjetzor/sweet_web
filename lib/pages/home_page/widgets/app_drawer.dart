@@ -34,129 +34,288 @@ class _AppDrawerState extends State<AppDrawer> with FileSelector {
   @override
   Widget build(BuildContext context) {
     final charRepo = RepositoryProvider.of<CharacterRepository>(context);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final primaryColor = theme.primaryColor;
+
+    // Subtle background tint for the drawer
+    final drawerBg = isDark
+        ? Color.lerp(Colors.grey.shade900, primaryColor, 0.05)
+        : Colors.white;
+
+    // Section header style
+    final sectionStyle = TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 1.2,
+      color: primaryColor.withAlpha(isDark ? 180 : 200),
+    );
 
     return SafeArea(
       child: Drawer(
+        backgroundColor: drawerBg,
         child: SafeArea(
-          child: Padding(
-            padding: EdgeInsets.only(bottom: 8),
-            child: Column(
-              children: [
-                Center(
-                  child: AppBanner(),
+          child: Column(
+            children: [
+              // --- Banner ---
+              AppBanner(),
+
+              // --- Menu ---
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  children: <Widget>[
+                    AppUpdateBanner(),
+
+                    // -- Pilot section --
+                    _buildSectionHeader('PILOT', sectionStyle),
+                    _buildPilotTile(context, charRepo, primaryColor, isDark),
+                    PIReminder(),
+
+                    const SizedBox(height: 4),
+                    _buildDivider(isDark),
+
+                    // -- Browse section --
+                    _buildSectionHeader('BROWSE', sectionStyle),
+                    _buildDrawerItem(
+                      context,
+                      title: 'Character Browser',
+                      icon: Icons.person_outline,
+                      event: ShowCharacterBrowserPage(),
+                      primaryColor: primaryColor,
+                      isDark: isDark,
+                    ),
+                    _buildDrawerItem(
+                      context,
+                      title: 'Market Browser',
+                      icon: Icons.storefront_outlined,
+                      event: ShowMarketBrowserPage(),
+                      primaryColor: primaryColor,
+                      isDark: isDark,
+                    ),
+                    if (PlatformHelper.isDebug)
+                      _buildDrawerItem(
+                        context,
+                        title: 'Items Browser',
+                        icon: Icons.menu_book_outlined,
+                        event: ShowItemBrowserPage(),
+                        primaryColor: primaryColor,
+                        isDark: isDark,
+                      ),
+
+                    const SizedBox(height: 4),
+                    _buildDivider(isDark),
+
+                    // -- Tools section --
+                    _buildSectionHeader('TOOLS', sectionStyle),
+                    _buildDrawerItem(
+                      context,
+                      title: 'Fitting Tool',
+                      icon: SweetIcons.fitting,
+                      event: ShowFittingToolPage(),
+                      primaryColor: primaryColor,
+                      isDark: isDark,
+                    ),
+                    _buildDrawerItem(
+                      context,
+                      title: 'Implant List',
+                      icon: SweetIcons.implant,
+                      event: ShowImplantToolPage(),
+                      primaryColor: primaryColor,
+                      isDark: isDark,
+                    ),
+
+                    const SizedBox(height: 4),
+                    _buildDivider(isDark),
+
+                    // -- Other section --
+                    _buildSectionHeader('OTHER', sectionStyle),
+                    _buildDrawerItem(
+                      context,
+                      title: 'Announcements',
+                      icon: Icons.campaign_outlined,
+                      event: ShowPatchNotesPage(),
+                      primaryColor: primaryColor,
+                      isDark: isDark,
+                    ),
+                    _buildDrawerItem(
+                      context,
+                      title: 'Settings',
+                      icon: Icons.settings_outlined,
+                      event: ShowSettingsPage(),
+                      primaryColor: primaryColor,
+                      isDark: isDark,
+                    ),
+                    _buildImportExportTile(context, primaryColor, isDark),
+                  ],
                 ),
-                Container(
-                  height: 1,
-                  color: Theme.of(context).secondaryHeaderColor,
+              ),
+
+              // --- Footer ---
+              _buildDivider(isDark),
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: VersionLabel(
+                        color: theme.textTheme.bodyLarge!.color!
+                            .withAlpha(100),
+                      ),
+                    ),
+                    SizedBox(
+                      height: 32,
+                      child: SocialButton(
+                        assetName:
+                            'assets/branding/discord-logo-white.svg',
+                        socialUrl: 'https://discord.gg/2QyVpSJKte',
+                        size: 16,
+                      ),
+                    ),
+                  ],
                 ),
-                Expanded(
-                  child: ListView(
-                    // Important: Remove any padding from the ListView.
-                    padding: EdgeInsets.zero,
-                    children: <Widget>[
-                      AppUpdateBanner(),
-                      ListTile(
-                        leading: Icon(
-                          Icons.airline_seat_recline_extra_outlined,
-                          size: 24,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                        title: Text(StaticLocalisationStrings.defaultPilot),
-                        subtitle: Text(charRepo.defaultPilot.name),
-                        onTap: () => showPilotDrawer(context),
-                      ),
-                      PIReminder(),
-                      buildDrawerListTile(
-                        context,
-                        title: 'Character Browser',
-                        icon: Icons.person,
-                        event: ShowCharacterBrowserPage(),
-                      ),
-                      buildDrawerListTile(
-                        context,
-                        title: 'Market Browser',
-                        icon: Icons.shopping_cart,
-                        event: ShowMarketBrowserPage(),
-                      ),
-                      PlatformHelper.isDebug
-                          ? buildDrawerListTile(context,
-                              title: 'Items Browser',
-                              icon: Icons.book,
-                              event: ShowItemBrowserPage())
-                          : Container(),
-                      buildDrawerListTile(
-                        context,
-                        title: 'Fitting Tool',
-                        icon: SweetIcons.fitting,
-                        event: ShowFittingToolPage(),
-                      ),
-                      buildDrawerListTile(
-                        context,
-                        title: 'Implant List',
-                        icon: SweetIcons.implant,
-                        event: ShowImplantToolPage(),
-                      ),
-                      buildDrawerListTile(
-                        context,
-                        title: 'Announcements',
-                        icon: Icons.announcement,
-                        event: ShowPatchNotesPage(),
-                      ),
-                      buildDrawerListTile(
-                        context,
-                        title: 'Settings',
-                        icon: Icons.settings,
-                        event: ShowSettingsPage(),
-                      ),
-                      ListTile(
-                        leading: Icon(
-                          Icons.import_export,
-                          size: 24,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                        title: Text(StaticLocalisationStrings.importExport),
-                        onTap: _importExportDialog,
-                      ),
-                    ],
-                  ),
-                ),
-                VersionLabel(
-                  color: Theme.of(context)
-                      .textTheme
-                      .bodyLarge!
-                      .color!
-                      .withAlpha(128),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: SocialButton(
-                    assetName: 'assets/branding/discord-logo-white.svg',
-                    socialUrl: 'https://discord.gg/2QyVpSJKte',
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  ListTile buildDrawerListTile(BuildContext context,
-      {required String title,
-      required IconData icon,
-      required NavigationEvent event}) {
-    return ListTile(
-      leading: Icon(
-        icon,
-        size: 24,
-        color: Theme.of(context).primaryColor,
+  Widget _buildSectionHeader(String title, TextStyle style) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 16, 4),
+      child: Text(title, style: style),
+    );
+  }
+
+  Widget _buildDivider(bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Divider(
+        height: 1,
+        thickness: 1,
+        color: isDark
+            ? Colors.white.withAlpha(15)
+            : Colors.black.withAlpha(15),
       ),
-      title: Text(title),
-      onTap: () {
-        BlocProvider.of<NavigationBloc>(context).add(event);
-        Navigator.of(context).pop();
-      },
+    );
+  }
+
+  Widget _buildPilotTile(
+    BuildContext context,
+    CharacterRepository charRepo,
+    Color primaryColor,
+    bool isDark,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+      child: ListTile(
+        dense: true,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        leading: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: primaryColor.withAlpha(isDark ? 40 : 25),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            Icons.airline_seat_recline_extra_outlined,
+            size: 20,
+            color: primaryColor,
+          ),
+        ),
+        title: Text(
+          StaticLocalisationStrings.defaultPilot,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+        ),
+        subtitle: Text(
+          charRepo.defaultPilot.name,
+          style: TextStyle(
+            fontSize: 12,
+            color: primaryColor.withAlpha(isDark ? 200 : 180),
+          ),
+        ),
+        onTap: () => showPilotDrawer(context),
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required NavigationEvent event,
+    required Color primaryColor,
+    required bool isDark,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+      child: ListTile(
+        dense: true,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        leading: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: primaryColor.withAlpha(isDark ? 40 : 25),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            size: 20,
+            color: primaryColor,
+          ),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+        ),
+        onTap: () {
+          BlocProvider.of<NavigationBloc>(context).add(event);
+          Navigator.of(context).pop();
+        },
+      ),
+    );
+  }
+
+  Widget _buildImportExportTile(
+    BuildContext context,
+    Color primaryColor,
+    bool isDark,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+      child: ListTile(
+        dense: true,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        leading: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: primaryColor.withAlpha(isDark ? 40 : 25),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            Icons.swap_horiz_outlined,
+            size: 20,
+            color: primaryColor,
+          ),
+        ),
+        title: Text(
+          StaticLocalisationStrings.importExport,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+        ),
+        onTap: _importExportDialog,
+      ),
     );
   }
 

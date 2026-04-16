@@ -37,41 +37,55 @@ class _PIReminderState extends State<PIReminder> {
         RepositoryProvider.of<LocalNotificationsService>(context);
 
     final localiseRepo = RepositoryProvider.of<LocalisationRepository>(context);
-    return ListTile(
-      leading: Icon(
-        Icons.public,
-        size: 24,
-        color: Theme.of(context).primaryColor,
+    final theme = Theme.of(context);
+    final primaryColor = theme.primaryColor;
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+      child: ListTile(
+        dense: true,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        leading: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: primaryColor.withAlpha(isDark ? 40 : 25),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            Icons.public_outlined,
+            size: 20,
+            color: primaryColor,
+          ),
+        ),
+        title: LocalisedText(
+          localiseId: LocalisationStrings.planetaryInteraction,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+        ),
+        subtitle: _buildSubtitle(),
+        onTap: () => setState(() {
+          final duration = Duration(hours: 24);
+          final date = DateTime.now().add(duration);
+          SharedPreferences.getInstance()
+              .then(
+                (prefs) =>
+                    prefs.setInt(endTimePrefsKey, date.millisecondsSinceEpoch),
+              );
+          endTime = date;
+        }),
       ),
-      title: LocalisedText(
-        localiseId: LocalisationStrings.planetaryInteraction,
-      ),
-      subtitle: _buildSubtitle(),
-      onTap: () => setState(() {
-        final duration = Duration(hours: 24);
-        final date = DateTime.now().add(duration);
-        SharedPreferences.getInstance()
-            .then(
-              (prefs) =>
-                  prefs.setInt(endTimePrefsKey, date.millisecondsSinceEpoch),
-          /*) // ToDo: Notifications have been disabled due to build issues and it is a useless feature anyways
-            .then(
-              (_) => notificationService.scheduleNotification(
-                title: localiseRepo.getLocalisedStringForIndex(
-                  LocalisationStrings.planetaryInteraction,
-                ),
-                message: 'Your timer is about to expire', // TODO: Localise
-                duration: duration - Duration(hours: 1),
-              ),*/
-            );
-        endTime = date;
-      }),
     );
   }
 
   Widget _buildSubtitle() {
     if (endTime == null) {
-      return Text('--:--:--\n${StaticLocalisationStrings.tapToRefresh}');
+      return Text(
+        '--:--:--\n${StaticLocalisationStrings.tapToRefresh}',
+        style: const TextStyle(fontSize: 12),
+      );
     }
 
     return CountdownTimer(
@@ -82,6 +96,7 @@ class _PIReminderState extends State<PIReminder> {
         final sec = time?.sec ?? 0;
         return Text(
           '$hours:${zeroPadInt(mins)}:${zeroPadInt(sec)}\n${StaticLocalisationStrings.tapToRefresh}',
+          style: const TextStyle(fontSize: 12),
         );
       },
     );
